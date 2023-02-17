@@ -1,0 +1,23 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-clients
+spec:
+  selector:
+    matchLabels:
+      app: test-clients
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: test-clients
+    spec:
+      containers:
+      - name: test-clients
+        image: dohbedoh/test-clients:1.0
+        args:
+          - "https://api.github.com/rate_limit"
+        env:
+          - name: JAVA_OPTS
+            value: "-Dcom.dohbedoh.proxyHost=squid-proxy -Dcom.dohbedoh.proxyPort=3128"

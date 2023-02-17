@@ -1,0 +1,3 @@
+#!/usr/bin/env sh
+
+exec java $JAVA_OPTS -cp /usr/share/test-clients/test-clients.jar com.dohbedoh.Main "$1"

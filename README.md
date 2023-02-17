@@ -60,7 +60,38 @@ Note: Both must be set to use Basic authentication.
 Test a request against a simple URL:
 
 ```
-java -cp test-clients-1.0-SNAPSHOT-jar-with-dependencies.jar com.dohbedoh.Main https://api.github.com/rate_limit
+java -cp test-clients-1.0-SNAPSHOT-jar-with-dependencies.jar com.dohbedoh.Main "https://api.github.com/rate_limit/"
+```
+
+With Docker:
+
+```
+docker run -ti --rm dohbedoh:test-clients:1.0 "https://api.github.com/rate_limit/"
+```
+
+With Kubernetes:
+
+```
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-clients
+spec:
+  selector:
+    matchLabels:
+      app: test-clients
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: test-clients
+    spec:
+      containers:
+      - name: test-clients
+        image: dohbedoh/test-clients:1.0
+        args:
+          - "https://api.github.com/rate_limit"
 ```
 
 ### Request URL with Basic Authentication
@@ -68,9 +99,49 @@ java -cp test-clients-1.0-SNAPSHOT-jar-with-dependencies.jar com.dohbedoh.Main h
 Test a request against a simple URL with Basic authentication
 
 ```
-TEST_UDER=dohbedoh \
+TEST_USER=dohbedoh \
 TEST_PASS=XXXXXXXXXXXXXXXXXXXXXXXX \
-java -cp test-clients-1.0-SNAPSHOT-jar-with-dependencies.jar com.dohbedoh.Main https://api.github.com/rate_limit
+java -cp test-clients-1.0-SNAPSHOT-jar-with-dependencies.jar com.dohbedoh.Main "https://api.github.com/rate_limit/"
+```
+
+With Docker:
+
+```
+docker run -ti --rm \
+  -e TEST_USER=dohbedoh \
+  -e TEST_PASS=XXXXXXXXXXXXXXXXXXXXXXXX \
+  dohbedoh:test-clients:1.0 "https://api.github.com/rate_limit/"
+```
+
+With Kubernetes:
+
+```
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-clients
+spec:
+  selector:
+    matchLabels:
+      app: test-clients
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: test-clients
+    spec:
+      containers:
+      - name: test-clients
+        image: dohbedoh/test-clients:1.0
+        args:
+          - "https://api.github.com/rate_limit"
+        env:
+          - name: TEST_USER
+            value: dohbedoh
+          - name: TEST_PASS
+            value: XXXXXXXXXXXXXXXXXXXXXXXX
+            # Better to create a kuberntes secret and use envFromSecret
 ```
 
 ### Request URL using an HTTP proxy
@@ -79,9 +150,45 @@ Test a request against a simple URL with an HTTP Proxy
 
 ```
 java \
-  -Dcom.dohbedoh.proxyHost="squid-proxy.squid.svc.cluster.local" \
+  -Dcom.dohbedoh.proxyHost="proxy.example.com" \
   -Dcom.dohbedoh.proxyPort=3128 \
-  -cp test-clients-1.0-SNAPSHOT-jar-with-dependencies.jar com.dohbedoh.Main "https://api.github.com/rate_limit"
+  -cp test-clients-1.0-SNAPSHOT-jar-with-dependencies.jar com.dohbedoh.Main "https://api.github.com/rate_limit/"
+```
+
+With Docker:
+
+```
+docker run -ti --rm \
+  -e JAVA_OPTS="-Dcom.dohbedoh.proxyHost=proxy.example.com -Dcom.dohbedoh.proxyPort=3128" \
+  dohbedoh:test-clients:1.0 "https://api.github.com/rate_limit/"
+```
+
+With Kubernetes:
+
+```
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-clients
+spec:
+  selector:
+    matchLabels:
+      app: test-clients
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: test-clients
+    spec:
+      containers:
+      - name: test-clients
+        image: dohbedoh/test-clients:1.0
+        args:
+          - "https://api.github.com/rate_limit"
+        env:
+          - name: JAVA_OPTS
+            value: "-Dcom.dohbedoh.proxyHost=squid-proxy -Dcom.dohbedoh.proxyPort=3128"
 ```
 
 ### Request URL with Basic Authentication ans using an HTTP proxy
@@ -89,10 +196,62 @@ java \
 Test a request against a simple URL with Basic authentication through an HTTP Proxy
 
 ```
-TEST_UDER=dohbedoh \
+TEST_USER=dohbedoh \
 TEST_PASS=XXXXXXXXXXXXXXXXXXXXXXXX \
 java \
-  -Dcom.dohbedoh.proxyHost="squid-proxy.squid.svc.cluster.local" \
+  -Dcom.dohbedoh.proxyHost="proxy.example.com" \
   -Dcom.dohbedoh.proxyPort=3128 \
-  -cp test-clients-1.0-SNAPSHOT-jar-with-dependencies.jar com.dohbedoh.Main "https://api.github.com/rate_limit"
+  -cp test-clients-1.0-SNAPSHOT-jar-with-dependencies.jar com.dohbedoh.Main "https://api.github.com/rate_limit/"
+```
+
+With Docker:
+
+```
+docker run -ti --rm \
+  -e TEST_USER=dohbedoh \
+  -e TEST_PASS=XXXXXXXXXXXXXXXXXXXXXXXX \
+  -e JAVA_OPTS="-Dcom.dohbedoh.proxyHost=proxy.example.com -Dcom.dohbedoh.proxyPort=3128" \
+  dohbedoh:test-clients:1.0 "https://api.github.com/rate_limit/"
+```
+
+With Kubernetes:
+
+```
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-clients
+spec:
+  selector:
+    matchLabels:
+      app: test-clients
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: test-clients
+    spec:
+      containers:
+      - name: test-clients
+        image: dohbedoh/test-clients:1.0
+        args:
+          - "https://api.github.com/rate_limit"
+        env:
+          - name: JAVA_OPTS
+            value: "-Dcom.dohbedoh.proxyHost=squid-proxy -Dcom.dohbedoh.proxyPort=3128"
+          - name: TEST_USER
+            value: dohbedoh
+            # Better to create a kuberntes secret and use envFromSecret
+            # valueFrom:
+            #   secretKeyRef:
+            #     name: test-credentials
+            #     key: test-user
+          - name: TEST_PASS
+            value: XXXXXXXXXXXXXXXXXXXXXXXX
+            # Better to create a kuberntes secret and use envFromSecret
+            # valueFrom:
+            #   secretKeyRef:
+            #     name: test-credentials
+            #     key: test-password
 ```
