@@ -1,19 +1,27 @@
 package com.dohbedoh;
 
 import okhttp3.Authenticator;
+import okhttp3.Call;
+import okhttp3.EventListener;
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
+import okhttp3.Protocol;
 import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 import okhttp3.Route;
+import okhttp3.internal.platform.Platform;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import javax.net.ssl.SSLSocketFactory;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.Proxy;
 import java.net.ProxySelector;
+import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.URI;
 import java.net.URL;
@@ -80,6 +88,9 @@ public class Main {
         // Logging
         clientBuilder.addInterceptor(new LoggingInterceptor("APPLICATION"));
         clientBuilder.addNetworkInterceptor(new LoggingInterceptor("NETWORK"));
+
+        clientBuilder.sslSocketFactory(new LoggingSocketFactory(), Platform.get().platformTrustManager());
+        clientBuilder.eventListener(new ConnectionListener());
 
         return clientBuilder.build();
     }
@@ -181,6 +192,128 @@ public class Main {
                     "[%s] Received response for %s in %.1fms%n%s",
                     prefix, response.request().url(), (t2 - t1) / 1e6d, response.headers()));
             return response;
+        }
+    }
+
+    public static class LoggingSocketFactory extends SSLSocketFactory {
+
+        private final SSLSocketFactory delegate =
+            Platform.get().newSslSocketFactory(Platform.get().platformTrustManager());
+
+        public LoggingSocketFactory() {
+            super();
+        }
+
+        @Override
+        public String[] getDefaultCipherSuites() {
+            return this.delegate.getDefaultCipherSuites();
+        }
+
+        @Override
+        public String[] getSupportedCipherSuites() {
+            return this.delegate.getSupportedCipherSuites();
+        }
+
+        @Override
+        public Socket createSocket(Socket s, String host, int port, boolean autoClose) throws IOException {
+            LOGGER.log(
+                Level.INFO,
+                String.format(
+                    "Socket connection to: %s:%s",
+                    host, port));
+            return delegate.createSocket(s, host, port, autoClose);
+        }
+
+        @Override
+        public Socket createSocket(String host, int port) throws IOException {
+            LOGGER.log(
+                Level.INFO,
+                String.format(
+                    "Socket connection to: %s:%s",
+                    host, port));
+            return this.delegate.createSocket(host, port);
+        }
+
+        @Override
+        public Socket createSocket(String host, int port, InetAddress localHost, int localPort) throws IOException {
+            LOGGER.log(
+                Level.INFO,
+                String.format(
+                    "Socket connection to: %s:%s on local %s:%s",
+                    host, port, localHost, localPort));
+            return this.delegate.createSocket(host, port, localHost, localPort);
+        }
+
+        @Override
+        public Socket createSocket(InetAddress host, int port) throws IOException {
+            LOGGER.log(
+                Level.INFO,
+                String.format(
+                    "Socket connection by InetAddress to: %s:%s",
+                    host, port));
+            return this.delegate.createSocket(host, port);
+        }
+
+        @Override
+        public Socket createSocket(InetAddress address, int port, InetAddress localAddress, int localPort) throws IOException {
+            LOGGER.log(
+                Level.INFO,
+                String.format(
+                    "Socket connection by InetAddress to: %s:%s on local %s:%s",
+                    address, port, localAddress, localPort));
+            return this.delegate.createSocket(address, port, localAddress, localPort);
+        }
+    }
+
+    public static class ConnectionListener extends EventListener {
+
+        @Override
+        public void connectStart(@NotNull Call call, @NotNull InetSocketAddress inetSocketAddress, @NotNull Proxy proxy) {
+            LOGGER.log(
+                Level.INFO,
+                String.format(
+                    "Connect Start to %s through %s",
+                    inetSocketAddress, proxy));
+            super.connectStart(call, inetSocketAddress, proxy);
+        }
+
+        @Override
+        public void connectEnd(@NotNull Call call, @NotNull InetSocketAddress inetSocketAddress, @NotNull Proxy proxy, @Nullable Protocol protocol) {
+            LOGGER.log(
+                Level.INFO,
+                String.format(
+                    "Connect End to %s through %s",
+                    inetSocketAddress, proxy));
+            super.connectEnd(call, inetSocketAddress, proxy, protocol);
+        }
+
+        @Override
+        public void connectFailed(@NotNull Call call, @NotNull InetSocketAddress inetSocketAddress, @NotNull Proxy proxy, @Nullable Protocol protocol, @NotNull IOException ioe) {
+            LOGGER.log(
+                Level.INFO,
+                String.format(
+                    "Connect Failed to %s through %s with %s",
+                    inetSocketAddress, proxy, ioe));
+            super.connectFailed(call, inetSocketAddress, proxy, protocol, ioe);
+        }
+
+        @Override
+        public void dnsEnd(@NotNull Call call, @NotNull String domainName, @NotNull List<InetAddress> inetAddressList) {
+            LOGGER.log(
+                Level.INFO,
+                String.format(
+                    "DNS End for domain %s with %s",
+                    domainName, inetAddressList));
+            super.dnsEnd(call, domainName, inetAddressList);
+        }
+
+        @Override
+        public void dnsStart(@NotNull Call call, @NotNull String domainName) {
+            LOGGER.log(
+                Level.INFO,
+                String.format(
+                    "DNS End for domain %s", domainName));
+            super.dnsStart(call, domainName);
         }
     }
 }
