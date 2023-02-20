@@ -10,7 +10,7 @@ RUN groupadd -g "${gid}" "${group}" \
 
 ENV LANG C.UTF-8
 
-ADD --chown="${user}":"${group}" target/test-clients-1.0-SNAPSHOT-jar-with-dependencies.jar /usr/share/test-clients/test-clients.jar
+ADD --chown="${user}":"${group}" target/test-clients-1.1-SNAPSHOT-jar-with-dependencies.jar /usr/share/test-clients/test-clients.jar
 RUN chmod 0644 /usr/share/test-clients/test-clients.jar
 COPY ./entrypoint /usr/local/bin/entrypoint
 RUN chmod +x /usr/local/bin/entrypoint
